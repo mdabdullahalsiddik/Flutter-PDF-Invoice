@@ -23,9 +23,8 @@ class HomeView extends StatelessWidget {
                   "contact": "01737374083", // Payer's contact number
                   "caseId": "CASE1001", // Case ID (if applicable)
                   "caseType": "Civil", // Case type (if applicable)
-                  "paymentMethod":
-                      "Bkash", // Purpose of the payment
-                  "amount": "5000.00", // Amount received
+                  "paymentMethod": "Bkash", // Purpose of the payment
+                  "amount": "500000.00", // Amount received
                 },
               );
             },

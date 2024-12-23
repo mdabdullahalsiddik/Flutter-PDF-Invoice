@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:invoice_pdf/database.dart';
 import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:syncfusion_flutter_pdf/pdf.dart';
@@ -21,23 +22,34 @@ class PaymentReceiptPdf extends GetxController {
     final Size pageSize =
         Size(page.getClientSize().width, page.getClientSize().height);
 
-    final PdfFont headerFont =
-        PdfStandardFont(PdfFontFamily.helvetica, 10, style: PdfFontStyle.bold);
     final PdfFont subHeaderFont = PdfStandardFont(PdfFontFamily.helvetica, 10);
     final PdfFont titleFont =
         PdfStandardFont(PdfFontFamily.helvetica, 16, style: PdfFontStyle.bold);
-    final PdfFont fieldFont = PdfStandardFont(PdfFontFamily.helvetica, 10);
+    final PdfFont fieldTitleFont = PdfStandardFont(PdfFontFamily.helvetica, 10);
+    final PdfFont headerFont = PdfStandardFont(PdfFontFamily.helvetica, 12,
+        style: PdfFontStyle.italic);
     final PdfFont footerFont =
         PdfStandardFont(PdfFontFamily.helvetica, 8, style: PdfFontStyle.italic);
     final PdfFont signatureFont = PdfStandardFont(PdfFontFamily.helvetica, 10);
     await _drawProfileImage(page);
     // Draw the first receipt
-    double yPosition = 0;
+    double yPosition = 10;
+    // Draw a border around the page
+    graphics.drawRectangle(
+      pen: PdfPen(PdfColor(0, 0, 0), width: 1), // Black border with 2pt width
+      bounds: Rect.fromLTWH(0, 0, pageSize.width, pageSize.height / 2 - 80),
+    );
     _drawReceipt(graphics, pageSize, yPosition, receiptData, headerFont,
-        subHeaderFont, titleFont, fieldFont, footerFont, signatureFont);
+        subHeaderFont, titleFont, fieldTitleFont, footerFont, signatureFont);
 
-    // Draw the second receipt below the first
+    // // Draw the second receipt below the first
     // yPosition += pageSize.height / 2;
+    // graphics.drawRectangle(
+    //   pen: PdfPen(PdfColor(0, 0, 0), width: 2), // Black border with 2pt width
+    //   bounds: Rect.fromLTWH(
+    //       0, yPosition - 10, pageSize.width, pageSize.height / 2 - 80),
+    // );
+
     // _drawReceipt(graphics, pageSize, yPosition, receiptData, headerFont,
     //     subHeaderFont, titleFont, fieldFont, footerFont, signatureFont);
 
@@ -59,7 +71,7 @@ class PaymentReceiptPdf extends GetxController {
     final Uint8List bytes = data.buffer.asUint8List();
 
     final PdfBitmap image = PdfBitmap(bytes);
-    page.graphics.drawImage(image, const Rect.fromLTWH(0, 0, 80, 80));
+    page.graphics.drawImage(image, const Rect.fromLTWH(5, 5, 80, 80));
 
     return 0;
     // const String imageUrl =
@@ -89,26 +101,30 @@ void _drawReceipt(
   graphics.drawString(
     'MONEY RECEIPT',
     titleFont,
-    bounds: const Rect.fromLTWH(50, 40, 300, 30),
-    format: PdfStringFormat(alignment: PdfTextAlignment.right),
+    bounds: Rect.fromLTWH(150, yOffset + 50, 300, 30),
+    format: PdfStringFormat(alignment: PdfTextAlignment.center),
+  );
+  graphics.drawRectangle(
+    pen: PdfPen(PdfColor(0, 0, 0), width: .5),
+    bounds: Rect.fromLTWH(210, yOffset + 45, 180, 30),
   );
   graphics.drawString(
-    'Advocate Office',
-    headerFont,
-    bounds: Rect.fromLTWH(pageSize.width - 300, yOffset, 300, 20),
+    DatabaseManager.companyName,
+    PdfStandardFont(PdfFontFamily.helvetica, 14, style: PdfFontStyle.italic),
+    bounds: Rect.fromLTWH(pageSize.width - 310, yOffset, 300, 20),
     format: PdfStringFormat(alignment: PdfTextAlignment.right),
   );
 
   graphics.drawString(
-    'Email: info@classicit.com',
+    DatabaseManager.companyMail,
     subHeaderFont,
-    bounds: Rect.fromLTWH(pageSize.width - 300, yOffset + 20, 300, 20),
+    bounds: Rect.fromLTWH(pageSize.width - 310, yOffset + 20, 300, 20),
     format: PdfStringFormat(alignment: PdfTextAlignment.right),
   );
   graphics.drawString(
-    'Contact: 01737374083',
+    DatabaseManager.companyPhone,
     subHeaderFont,
-    bounds: Rect.fromLTWH(pageSize.width - 300, yOffset + 40, 300, 20),
+    bounds: Rect.fromLTWH(pageSize.width - 310, yOffset + 35, 300, 20),
     format: PdfStringFormat(alignment: PdfTextAlignment.right),
   );
 
@@ -125,6 +141,11 @@ void _drawReceipt(
 
   _drawNameField(graphics, pageSize, yPosition, receiptData["name"], headerFont,
       fieldFont);
+  graphics.drawString(
+    ",",
+    headerFont,
+    bounds: Rect.fromLTWH(pageSize.width - 175, yPosition + 1, 5, 20),
+  );
 
   _drawContactField(graphics, pageSize, yPosition, receiptData["contact"],
       headerFont, fieldFont);
@@ -132,9 +153,19 @@ void _drawReceipt(
 
   _drawCaseIDField(graphics, pageSize, yPosition, receiptData["caseId"],
       headerFont, fieldFont);
+  graphics.drawString(
+    ",",
+    headerFont,
+    bounds: Rect.fromLTWH(135, yPosition + 1, 5, 20),
+  );
 
   _drawCaseTypeField(graphics, pageSize, yPosition, receiptData["caseType"],
       headerFont, fieldFont);
+  graphics.drawString(
+    ",",
+    headerFont,
+    bounds: Rect.fromLTWH(355, yPosition + 1, 5, 20),
+  );
 
   _drawAmountField(graphics, pageSize, yPosition, receiptData["amount"],
       headerFont, fieldFont);
@@ -145,10 +176,10 @@ void _drawReceipt(
   yPosition += lineSpacing * 2;
 
   graphics.drawString(
-    'visit us: www.classicit.com',
+    'visit us: ${DatabaseManager.companyWebSite}',
     signatureFont,
     bounds: Rect.fromLTWH(
-        0, yOffset + pageSize.height / 2 - 120, pageSize.width / 2 - 20, 20),
+        10, yOffset + pageSize.height / 2 - 120, pageSize.width / 2 - 20, 20),
   );
 
   graphics.drawString(
@@ -160,8 +191,8 @@ void _drawReceipt(
   // Line for Client Signature
   graphics.drawLine(
     PdfPen(PdfColor(0, 0, 0), width: 1),
-    Offset(pageSize.width - 20, yOffset + pageSize.height / 2 - 120),
-    Offset(400, yOffset + pageSize.height / 2 - 120),
+    Offset(pageSize.width - 20, yOffset + pageSize.height / 2 - 125),
+    Offset(400, yOffset + pageSize.height / 2 - 125),
   );
 }
 
@@ -178,7 +209,7 @@ void _drawMrNoField(
   graphics.drawString(
     'MR No :',
     titleFont,
-    bounds: Rect.fromLTWH(0, yPosition, 50, 20),
+    bounds: Rect.fromLTWH(10, yPosition, 50, 20),
   );
 
   graphics.drawString(
@@ -220,7 +251,7 @@ void _drawNameField(
   graphics.drawString(
     'Received payment with thanks from',
     titleFont,
-    bounds: Rect.fromLTWH(0, yPosition, 150, 20),
+    bounds: Rect.fromLTWH(10, yPosition, 150, 20),
   );
 
   graphics.drawString(
@@ -245,9 +276,9 @@ void _drawContactField(
   PdfFont titleFont,
 ) {
   graphics.drawString(
-    ', Contact No',
+    'Contact No',
     titleFont,
-    bounds: Rect.fromLTWH(pageSize.width - 170, yPosition, 300, 20),
+    bounds: Rect.fromLTWH(pageSize.width - 165, yPosition, 300, 20),
   );
 
   graphics.drawString(
@@ -258,7 +289,7 @@ void _drawContactField(
 
   graphics.drawLine(
     PdfPen(PdfColor(128, 128, 128)),
-    Offset(pageSize.width - 100, yPosition + 12),
+    Offset(pageSize.width - 110, yPosition + 12),
     Offset(pageSize.width - 20, yPosition + 12),
   );
 }
@@ -272,9 +303,9 @@ void _drawCaseIDField(
   PdfFont titleFont,
 ) {
   graphics.drawString(
-    'Case ID:',
+    'Case ID',
     titleFont,
-    bounds: Rect.fromLTWH(0, yPosition, 50, 20),
+    bounds: Rect.fromLTWH(10, yPosition, 50, 20),
   );
 
   graphics.drawString(
@@ -299,9 +330,9 @@ void _drawCaseTypeField(
   PdfFont titleFont,
 ) {
   graphics.drawString(
-    ', Case Type',
+    'Case Type',
     titleFont,
-    bounds: Rect.fromLTWH(140, yPosition, 300, 20),
+    bounds: Rect.fromLTWH(150, yPosition, 300, 20),
   );
 
   graphics.drawString(
@@ -326,9 +357,9 @@ void _drawAmountField(
   PdfFont titleFont,
 ) {
   graphics.drawString(
-    ', Amount of:',
+    'Amount of',
     titleFont,
-    bounds: Rect.fromLTWH(360, yPosition, 80, 20),
+    bounds: Rect.fromLTWH(370, yPosition, 80, 20),
   );
 
   graphics.drawString(
@@ -355,7 +386,7 @@ void _drawPaymentMethodField(
   graphics.drawString(
     'with',
     titleFont,
-    bounds: Rect.fromLTWH(0, yPosition, 30, 20),
+    bounds: Rect.fromLTWH(10, yPosition, 30, 20),
   );
 
   graphics.drawString(
